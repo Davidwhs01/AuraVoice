@@ -1331,3 +1331,65 @@ body::before {
   border: none;
   cursor: pointer;
 }
+
+/* ============ Auth Forms ============ */
+.auth-modal {
+  width: 380px;
+}
+
+.auth-modal .modal-subtitle {
+  text-align: center;
+}
+
+.auth-modal .modal-input-group {
+  margin-bottom: 16px;
+}
+
+.auth-modal .btn-primary {
+  margin-top: 8px;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.auth-switch button {
+  background: none;
+  border: none;
+  color: var(--cosmic-primary);
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+.auth-switch button:hover {
+  color: var(--cosmic-violet);
+}
+
+.auth-error {
+  color: var(--red);
+  font-size: 14px;
+  text-align: center;
+  margin-top: 12px;
+  padding: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: var(--radius-sm);
+}
+
+.user-panel-logout {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+.user-panel-logout:hover {
+  background: var(--bg-hover);
+  color: var(--red);
+}

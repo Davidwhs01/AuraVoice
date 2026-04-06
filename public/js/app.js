@@ -1,6 +1,8 @@
 // ============================================
-// Main Application Controller (Supabase Edition)
+// Main Application Controller (Supabase + Auth)
 // ============================================
+
+import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
 
 (() => {
   // ========== Server & Channel Data ==========
@@ -27,30 +29,8 @@
             { id: 'mal-remunerados', name: 'Mal remunerados', type: 'voice' },
             { id: 'sonegadores', name: 'Sonegadores', type: 'voice' },
             { id: 'aposentados', name: 'Aposentados', type: 'voice' },
-            { id: 'so-o-po-da-rabiola', name: 'Só o pó da rabiola', type: 'voice' },
             { id: 'jogando', name: 'Jogando', type: 'voice' },
-            { id: 'jogando-ii', name: 'Jogando II', type: 'voice' },
-            { id: 'jogando-iii', name: 'Jogando III', type: 'voice' },
-            { id: 'jogando-iv', name: 'Jogando IV', type: 'voice' },
-            { id: 'amongas', name: 'Amongas', type: 'voice' },
-            { id: 'fortnai', name: 'Fortnai', type: 'voice' },
-            { id: 'cod', name: 'COD', type: 'voice' },
-            { id: 'tombou', name: 'Tombou', type: 'voice' }
-          ]
-        },
-        {
-          name: 'jukebox',
-          channels: [
-            { id: 'rave-do-aki', name: 'Rave do AKI', type: 'voice' }
-          ]
-        },
-        {
-          name: 'Trabalhando',
-          channels: [
-            { id: 'gravando', name: 'Gravando', type: 'voice' },
-            { id: 'produzindo', name: 'Produzindo', type: 'voice' },
-            { id: 'editando', name: 'Editando', type: 'voice' },
-            { id: 'desenhando', name: 'Desenhando', type: 'voice' }
+            { id: 'fortnai', name: 'Fortnai', type: 'voice' }
           ]
         }
       ]
@@ -58,11 +38,10 @@
   ];
 
   // ========== State ==========
-  let socketId = null;
+  let currentUser = null;
   let activeServerId = null;
   let activeChannelId = null;
   let currentRoomId = null;
-  let username = '';
   let roomsSummary = {};
   let roomUsers = {};
   let speakingStates = {};
@@ -73,44 +52,150 @@
   let localIsScreenSharing = false;
   let peerVolumes = {};
   let avatarColor = null;
+  let socketId = null;
 
   // ========== Init ==========
-  function init() {
-    setupUsernameModal();
+  async function init() {
+    // Check for existing session
+    const session = await getSession();
+    if (session) {
+      currentUser = session.user;
+      avatarColor = getRandomColor();
+      username = session.user.user_metadata?.username || session.user.email.split('@')[0];
+      socketId = 'user_' + Math.random().toString(36).substr(2, 9);
+      showApp();
+    } else {
+      setupAuthModal();
+    }
   }
 
-  function setupUsernameModal() {
-    const modal = document.getElementById('username-modal');
-    const input = document.getElementById('username-input');
-    const submit = document.getElementById('username-submit');
+  function setupAuthModal() {
+    // Login form
+    document.getElementById('login-submit').addEventListener('click', handleLogin);
+    document.getElementById('login-password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
 
-    submit.addEventListener('click', () => handleUsernameSubmit(input, modal));
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleUsernameSubmit(input, modal);
+    // Register form
+    document.getElementById('register-submit').addEventListener('click', handleRegister);
+    document.getElementById('register-password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleRegister();
+    });
+
+    // Switch between forms
+    document.getElementById('show-register').addEventListener('click', () => {
+      document.getElementById('login-form').classList.add('hidden');
+      document.getElementById('register-form').classList.remove('hidden');
+    });
+
+    document.getElementById('show-login').addEventListener('click', () => {
+      document.getElementById('register-form').classList.add('hidden');
+      document.getElementById('login-form').classList.remove('hidden');
     });
   }
 
-  function handleUsernameSubmit(input, modal) {
-    const name = input.value.trim();
-    if (!name) {
-      input.style.borderColor = '#ef4444';
-      input.focus();
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('auth-error');
+
+    if (!email || !password) {
+      errorEl.textContent = 'Preencha todos os campos';
+      errorEl.classList.remove('hidden');
       return;
     }
 
-    username = name;
-    modal.classList.remove('active');
+    const { data, error } = await signIn(email, password);
+
+    if (error) {
+      errorEl.textContent = error.message;
+      errorEl.classList.remove('hidden');
+    } else {
+      currentUser = data.user;
+      username = data.user.user_metadata?.username || email.split('@')[0];
+      avatarColor = getRandomColor();
+      socketId = 'user_' + Math.random().toString(36).substr(2, 9);
+      errorEl.classList.add('hidden');
+      showApp();
+    }
+  }
+
+  async function handleRegister() {
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    const displayName = document.getElementById('register-username').value.trim();
+    const errorEl = document.getElementById('auth-error');
+
+    if (!email || !password || !displayName) {
+      errorEl.textContent = 'Preencha todos os campos';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    if (password.length < 6) {
+      errorEl.textContent = 'Senha deve ter pelo menos 6 caracteres';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    const { data, error } = await signUp(email, password);
+
+    if (error) {
+      errorEl.textContent = error.message;
+      errorEl.classList.remove('hidden');
+    } else {
+      // Auto-login after signup
+      const { data: loginData, error: loginError } = await signIn(email, password);
+      if (loginError) {
+        // Account created, user needs to confirm email
+        errorEl.textContent = 'Conta criada! Verifique seu email para confirmar.';
+        errorEl.classList.remove('hidden');
+        document.getElementById('register-form').classList.add('hidden');
+        document.getElementById('login-form').classList.remove('hidden');
+      } else {
+        currentUser = loginData.user;
+        username = displayName;
+        avatarColor = getRandomColor();
+        socketId = 'user_' + Math.random().toString(36).substr(2, 9);
+        errorEl.classList.add('hidden');
+        showApp();
+      }
+    }
+  }
+
+  function showApp() {
+    document.getElementById('login-modal').classList.remove('active');
     document.getElementById('app').classList.remove('hidden');
 
     // Update user display
     document.getElementById('user-display-name').textContent = username;
     document.getElementById('user-avatar-letter').textContent = username[0].toUpperCase();
+    document.getElementById('user-avatar').style.background = avatarColor;
 
-    // Generate socket ID and color
-    socketId = 'user_' + Math.random().toString(36).substr(2, 9);
-    avatarColor = getRandomColor();
+    // Add logout button
+    addLogoutButton();
 
+    // Start app
     startApp();
+  }
+
+  function addLogoutButton() {
+    const userControls = document.querySelector('.user-controls');
+    const existingLogout = document.getElementById('btn-logout');
+    if (existingLogout) return;
+
+    const logoutBtn = document.createElement('button');
+    logoutBtn.id = 'btn-logout';
+    logoutBtn.className = 'user-panel-logout';
+    logoutBtn.textContent = 'Sair';
+    logoutBtn.title = 'Sair da conta';
+    logoutBtn.addEventListener('click', handleLogout);
+    userControls.appendChild(logoutBtn);
+  }
+
+  async function handleLogout() {
+    await signOut();
+    location.reload();
   }
 
   function getRandomColor() {
@@ -121,8 +206,10 @@
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
+  // ========== Continue with original app logic ==========
+  // (Reusing the rest of the app logic)
+
   function startApp() {
-    // Initialize Realtime with Supabase
     const userData = {
       socketId: socketId,
       username: username,
@@ -134,32 +221,19 @@
     };
 
     RealtimeManager.connect(userData);
-
-    // Setup Realtime callbacks
     setupRealtimeCallbacks();
-
-    // Setup UI
     setupUIListeners();
-
-    // Render servers
     UI.renderServerIcons(SERVERS, activeServerId);
-
-    // Select first server by default
     selectServer(SERVERS[0].id);
 
     console.log('✅ Conectado ao Supabase Realtime');
-    UI.showToast(`Conectado como ${username}`, 'success');
+    UI.showToast(`Bem-vindo, ${username}!`, 'success');
   }
 
-  // ========== Realtime Callbacks ==========
   function setupRealtimeCallbacks() {
-    // When we join a room, get existing users
     RealtimeManager.onRoomUsersUpdatedCallback((users) => {
-      console.log('👥 Room users updated:', Object.keys(users));
       roomUsers = users;
       renderCurrentVoiceUsers();
-      
-      // Connect to existing peers
       Object.keys(users).forEach(id => {
         if (id !== socketId) {
           WebRTCManager.connectToPeer(id);
@@ -167,44 +241,30 @@
       });
     });
 
-    // Peer connected
     RealtimeManager.onPeerConnectedCallback((peerData) => {
-      console.log(`👋 ${peerData.username} entrou na sala`);
       roomUsers[peerData.socketId] = peerData;
       UI.showToast(`${peerData.username} entrou no canal`, 'info');
       renderCurrentVoiceUsers();
     });
 
-    // Peer disconnected
     RealtimeManager.onPeerDisconnectedCallback((peerSocketId) => {
-      console.log(`👋 Usuário saiu da sala: ${peerSocketId}`);
       delete roomUsers[peerSocketId];
       WebRTCManager.closePeer(peerSocketId);
       renderCurrentVoiceUsers();
     });
 
-    // WebRTC Signaling
     RealtimeManager.onOfferCallback(async ({ senderId, offer }) => {
-      console.log(`📨 Oferta recebida de ${senderId}`);
       const pc = WebRTCManager.createPeerConnection(senderId);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      
       const localStream = WebRTCManager.getLocalStream();
       if (localStream) {
         localStream.getTracks().forEach(track => {
           pc.addTrack(track, localStream);
         });
       }
-      
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      
       RealtimeManager.sendAnswer(senderId, pc.localDescription);
-    });
-
-    RealtimeManager.onAnswerCallback(async ({ senderId, answer }) => {
-      console.log(`📨 Resposta recebida de ${senderId}`);
-      // Answer handling is done in WebRTCManager
     });
 
     RealtimeManager.onIceCandidateCallback(async ({ senderId, candidate }) => {
@@ -213,89 +273,63 @@
         try {
           await pc.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (e) {
-          console.error('Erro ao adicionar ICE candidate:', e);
+          console.error('Erro ICE:', e);
         }
       }
     });
 
-    // Screen share
     RealtimeManager.onScreenShareStartedCallback(({ socketId: sharerId, username: sharerName }) => {
       screenSharers.add(sharerId);
-      UI.showToast(`${sharerName} começou a compartilhar a tela`, 'info');
-      
-      // Mute all call audio for viewers
+      UI.showToast(`${sharerName} compartilhando tela`, 'info');
       document.querySelectorAll('audio[id^="remote-audio-"]').forEach(audio => {
         if (audio.id !== `remote-audio-${sharerId}`) {
           audio.dataset.wasPlaying = audio.volume > 0;
           audio.muted = true;
         }
       });
-      
       renderCurrentVoiceUsers();
     });
 
     RealtimeManager.onScreenShareStoppedCallback(({ socketId: sharerId }) => {
       screenSharers.delete(sharerId);
       UI.removeScreenShareStream(sharerId);
-      
       document.querySelectorAll('audio[id^="remote-audio-"]').forEach(audio => {
         audio.muted = localIsDeafened;
       });
-      
       renderCurrentVoiceUsers();
     });
 
-    // Speaking
     RealtimeManager.onSpeakingChangedCallback(({ socketId: sId, isSpeaking }) => {
       speakingStates[sId] = isSpeaking;
       UI.updateSpeakingState(sId, isSpeaking);
     });
 
-    // Mute status
     RealtimeManager.onMuteStatusChangedCallback(({ socketId: sId, muted, deafened }) => {
       muteStates[sId] = { muted, deafened };
       renderCurrentVoiceUsers();
     });
   }
 
-  // ========== UI Listeners ==========
   function setupUIListeners() {
-    // Server icon clicks
     document.getElementById('server-list').addEventListener('click', (e) => {
       const serverIcon = e.target.closest('.server-icon');
       if (!serverIcon) return;
-
       const serverId = serverIcon.dataset.server;
-      if (serverId === 'home') {
-        selectServer(null);
-        return;
-      }
-      if (serverIcon.classList.contains('add-server')) {
-        UI.showToast('Criar servidor ainda não disponível no MVP', 'info');
-        return;
-      }
-      if (serverId) {
-        selectServer(serverId);
-      }
+      if (serverId === 'home') { selectServer(null); return; }
+      if (serverId) { selectServer(serverId); }
     });
 
-    // Channel clicks
     document.getElementById('channels-container').addEventListener('click', (e) => {
       const channelItem = e.target.closest('.channel-item');
       if (!channelItem) return;
-
       const channelId = channelItem.dataset.channelId;
       const channelType = channelItem.dataset.channelType;
       const channelName = channelItem.dataset.channelName;
-
       if (channelType === 'voice') {
         joinVoiceChannel(channelId, channelName);
-      } else {
-        UI.showToast('Chat de texto ainda não disponível no MVP', 'info');
       }
     });
 
-    // Control buttons
     document.getElementById('btn-mute').addEventListener('click', async () => {
       localIsMuted = WebRTCManager.toggleMute();
       updateControlButtons();
@@ -332,33 +366,12 @@
       }
     });
 
-    // Disconnect button
-    document.getElementById('btn-disconnect').addEventListener('click', () => {
-      leaveVoiceChannel();
-    });
-
-    // Quality button in voice header
-    document.getElementById('btn-quality').addEventListener('click', () => {
-      console.log('🎛️ Quality button clicked!');
-      UI.openQualityModal();
-    });
-
-    // Settings button in user panel
-    document.getElementById('btn-settings').addEventListener('click', () => {
-      UI.showToast('Configurações em breve!', 'info');
-    });
-
-    // Quality modal
-    document.getElementById('quality-modal-close').addEventListener('click', () => {
-      UI.closeQualityModal();
-    });
-
+    document.getElementById('btn-disconnect').addEventListener('click', () => leaveVoiceChannel());
+    document.getElementById('btn-quality').addEventListener('click', () => UI.openQualityModal());
+    document.getElementById('quality-modal-close').addEventListener('click', () => UI.closeQualityModal());
     document.getElementById('quality-modal').addEventListener('click', (e) => {
-      if (e.target.id === 'quality-modal') {
-        UI.closeQualityModal();
-      }
+      if (e.target.id === 'quality-modal') UI.closeQualityModal();
     });
-
     document.getElementById('quality-save').addEventListener('click', () => {
       const settings = {
         video: {
@@ -372,44 +385,33 @@
           processing: document.getElementById('quality-audio-processing').value
         }
       };
-      
       WebRTCManager.setQualitySettings(settings);
       UI.closeQualityModal();
-      UI.showToast('Configurações de qualidade salvas!', 'success');
+      UI.showToast('Configurações salvas!', 'success');
     });
   }
 
-  // ========== Server Selection ==========
   function selectServer(serverId) {
     activeServerId = serverId;
-
-    // Update server icons
     document.querySelectorAll('.server-icon').forEach(icon => {
       icon.classList.toggle('active', icon.dataset.server === (serverId || 'home'));
     });
-
     if (serverId) {
       const server = SERVERS.find(s => s.id === serverId);
-      if (server) {
-        UI.renderChannels(server, activeChannelId, roomsSummary);
-      }
+      if (server) { UI.renderChannels(server, activeChannelId, roomsSummary); }
     } else {
       document.getElementById('server-name').textContent = 'AuraVoice';
       document.getElementById('channels-container').innerHTML = `
-        <div style="padding: 16px; color: var(--text-muted); font-size: 14px; text-align: center;">
-          <p style="margin-bottom: 8px;">👋 Selecione um servidor</p>
-          <p>na barra lateral esquerda</p>
-        </div>
-      `;
+        <div style="padding: 16px; color: var(--text-muted); text-align: center;">
+          <p>Selecione um servidor</p>
+        </div>`;
     }
   }
 
-  // ========== Voice Channel ==========
   async function joinVoiceChannel(channelId, channelName) {
     const newRoomId = `${activeServerId}:${channelId}`;
     if (newRoomId === currentRoomId) return;
 
-    // Leave previous room
     if (currentRoomId) {
       await RealtimeManager.leaveRoom();
       WebRTCManager.closeAllPeers();
@@ -424,54 +426,31 @@
     screenSharers.clear();
     muteStates[socketId] = { muted: false, deafened: false };
 
-    // Join new room in Supabase Realtime
     await RealtimeManager.joinRoom(currentRoomId);
-    
-    // Update presence with current state
-    RealtimeManager.updatePresence({
-      username,
-      avatarColor,
-      isMuted: localIsMuted,
-      isDeafened: localIsDeafened
-    });
-
-    // Start microphone
+    RealtimeManager.updatePresence({ username, avatarColor, isMuted: localIsMuted, isDeafened: localIsDeafened });
     await WebRTCManager.startMicrophone();
 
-    // Setup WebRTC callbacks
     WebRTCManager.onSpeaking((isSpeaking) => {
       speakingStates[socketId] = isSpeaking;
       UI.updateSpeakingState(socketId, isSpeaking);
       RealtimeManager.sendSpeaking(isSpeaking);
     });
 
-    // Update control buttons
     updateControlButtons();
-
-    // Show voice view
     UI.showVoiceView(channelName);
-
     UI.showToast(`Conectado a ${channelName}`, 'success');
-    console.log(`🔊 Entrou no canal: ${channelName} (${currentRoomId})`);
   }
 
   function leaveVoiceChannel() {
     if (!currentRoomId) return;
-
-    // Stop screen sharing
     if (localIsScreenSharing) {
       WebRTCManager.stopScreenShare();
       localIsScreenSharing = false;
     }
-
-    // Close all peer connections
     WebRTCManager.closeAllPeers();
     WebRTCManager.stopMicrophone();
-
-    // Leave room in Supabase
     RealtimeManager.leaveRoom();
 
-    const channelName = activeChannelId;
     currentRoomId = null;
     activeChannelId = null;
     roomUsers = {};
@@ -479,34 +458,21 @@
     muteStates = {};
     screenSharers.clear();
 
-    // Update UI
     UI.hideVoiceView();
-
-    // Re-render channels
     if (activeServerId) {
       const server = SERVERS.find(s => s.id === activeServerId);
-      if (server) {
-        UI.renderChannels(server, null, roomsSummary);
-      }
+      if (server) { UI.renderChannels(server, null, roomsSummary); }
     }
-
-    UI.showToast('Desconectado do canal de voz', 'info');
-    console.log('🔇 Saiu do canal de voz');
+    UI.showToast('Desconectado', 'info');
   }
 
-  // ========== Helpers ==========
   function renderCurrentVoiceUsers() {
     if (!currentRoomId || !roomUsers) return;
     UI.renderVoiceUsers(roomUsers, socketId, speakingStates, muteStates, screenSharers);
-    
-    // Setup volume slider events
     document.querySelectorAll('.volume-slider').forEach(slider => {
       const sId = slider.dataset.socketId;
-      
-      // Load saved volume or default to 100%
       const savedVolume = peerVolumes[sId] !== undefined ? peerVolumes[sId] : 1.0;
       slider.value = savedVolume * 100;
-      
       slider.addEventListener('input', (e) => {
         const volume = e.target.value / 100;
         peerVolumes[sId] = volume;
@@ -519,7 +485,6 @@
     const muteBtn = document.getElementById('btn-mute');
     const deafenBtn = document.getElementById('btn-deafen');
     const screenBtn = document.getElementById('btn-screen-share');
-
     muteBtn.classList.toggle('active', localIsMuted);
     deafenBtn.classList.toggle('active', localIsDeafened);
     screenBtn.classList.toggle('active', localIsScreenSharing);

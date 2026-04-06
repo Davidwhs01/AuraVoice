@@ -11,9 +11,9 @@
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-  <!-- Username Modal -->
-  <div id="username-modal" class="modal-overlay active">
-    <div class="modal">
+  <!-- Login Modal -->
+  <div id="login-modal" class="modal-overlay active">
+    <div class="modal auth-modal">
       <div class="modal-logo">
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
           <ellipse cx="24" cy="24" rx="20" ry="8" stroke="url(#logo-grad)" stroke-width="2" transform="rotate(-30 24 24)" opacity="0.6"/>
@@ -33,12 +33,46 @@
         </svg>
         <h1>AuraVoice</h1>
       </div>
-      <p class="modal-subtitle">Bem-vindo! Escolha um nome para começar.</p>
-      <div class="modal-input-group">
-        <label for="username-input">NOME DE EXIBIÇÃO</label>
-        <input type="text" id="username-input" placeholder="Seu nome..." maxlength="24" autofocus>
+      
+      <!-- Login Form -->
+      <div id="login-form">
+        <p class="modal-subtitle">Entre na sua conta para continuar.</p>
+        <div class="modal-input-group">
+          <label for="login-email">EMAIL</label>
+          <input type="email" id="login-email" placeholder="seu@email.com" autofocus>
+        </div>
+        <div class="modal-input-group">
+          <label for="login-password">SENHA</label>
+          <input type="password" id="login-password" placeholder="••••••••">
+        </div>
+        <button id="login-submit" class="btn-primary">Entrar</button>
+        <p class="auth-switch">
+          Não tem conta? <button type="button" id="show-register">Criar conta</button>
+        </p>
       </div>
-      <button id="username-submit" class="btn-primary">Entrar</button>
+      
+      <!-- Register Form -->
+      <div id="register-form" class="hidden">
+        <p class="modal-subtitle">Crie sua conta para começar.</p>
+        <div class="modal-input-group">
+          <label for="register-email">EMAIL</label>
+          <input type="email" id="register-email" placeholder="seu@email.com">
+        </div>
+        <div class="modal-input-group">
+          <label for="register-password">SENHA</label>
+          <input type="password" id="register-password" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="modal-input-group">
+          <label for="register-username">NOME DE EXIBIÇÃO</label>
+          <input type="text" id="register-username" placeholder="Como você quer ser chamado" maxlength="24">
+        </div>
+        <button id="register-submit" class="btn-primary">Criar Conta</button>
+        <p class="auth-switch">
+          Já tem conta? <button type="button" id="show-login">Entrar</button>
+        </p>
+      </div>
+      
+      <p id="auth-error" class="auth-error hidden"></p>
     </div>
   </div>
 

@@ -232,6 +232,33 @@
           <!-- User tiles will be rendered here -->
         </div>
       </div>
+
+      <!-- Text Chat View -->
+      <div class="chat-view hidden" id="chat-view">
+        <div class="chat-header">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5.88 21l1.54-6H3l.49-2h4.42l1.46-6H5l.49-2h4.42L11.37 1h2.06l-1.46 4H16.4l1.46-4h2.06l-1.46 4H23l-.49 2h-4.42l-1.46 6H21l-.49 2h-4.42L14.63 19h-2.06l1.46-4H9.6l-1.46 4H6.08zM9.97 7l-1.46 6h4.42l1.46-6H9.97z"/></svg>
+          <span id="chat-channel-name">Canal</span>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-welcome" id="chat-welcome">
+            <div class="chat-welcome-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+                <path d="M5.88 21l1.54-6H3l.49-2h4.42l1.46-6H5l.49-2h4.42L11.37 1h2.06l-1.46 4H16.4l1.46-4h2.06l-1.46 4H23l-.49 2h-4.42l-1.46 6H21l-.49 2h-4.42L14.63 19h-2.06l1.46-4H9.6l-1.46 4H6.08zM9.97 7l-1.46 6h4.42l1.46-6H9.97z"/>
+              </svg>
+            </div>
+            <h3>Bem-vindo ao canal!</h3>
+            <p>Este é o começo do canal. Envie uma mensagem para iniciar a conversa.</p>
+          </div>
+        </div>
+        <div class="chat-input-bar">
+          <input type="text" id="chat-input" placeholder="Enviar mensagem..." maxlength="2000" autocomplete="off">
+          <button id="chat-send-btn" class="chat-send-btn" title="Enviar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
     </main>
   </div>
 

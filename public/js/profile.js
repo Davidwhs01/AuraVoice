@@ -16,6 +16,31 @@ const ProfileManager = (() => {
       .eq('id', userId)
       .single();
 
+    if (error && error.code === 'PGRST116') {
+      // Profile row missing — auto-create it
+      console.warn('Perfil não encontrado, criando automaticamente...');
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      if (!user || user.id !== userId) return null;
+
+      const fallbackUsername = user.user_metadata?.username || user.email?.split('@')[0] || 'User';
+      const { data: newProfile, error: insertErr } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          username: fallbackUsername,
+          avatar_color: '#7c3aed',
+          status: 'online'
+        }, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (insertErr) {
+        console.error('Erro ao criar perfil fallback:', insertErr);
+        return null;
+      }
+      return newProfile;
+    }
     if (error) {
       console.error('Erro ao buscar perfil:', error);
       return null;
@@ -99,6 +124,22 @@ const ProfileManager = (() => {
       .eq('id', user.id)
       .single();
 
+    if (error && error.code === 'PGRST116') {
+      // Settings row missing — auto-create it
+      console.warn('Settings não encontradas, criando automaticamente...');
+      const { data: newSettings, error: insertErr } = await supabase
+        .from('user_settings')
+        .upsert({ id: user.id }, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (insertErr) {
+        console.error('Erro ao criar settings fallback:', insertErr);
+        return null;
+      }
+      currentSettings = newSettings;
+      return newSettings;
+    }
     if (error) {
       console.error('Erro ao buscar settings:', error);
       return null;

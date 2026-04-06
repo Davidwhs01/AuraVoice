@@ -360,6 +360,75 @@ const ServerManager = (() => {
     cachedChannels = {};
   }
 
+  // ========== MESSAGES ==========
+
+  let messageSubscription = null;
+
+  async function getMessages(channelId, limit = 50) {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*, profiles:user_id(username, avatar_url, avatar_color)')
+      .eq('channel_id', channelId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Erro ao buscar mensagens:', error);
+      return [];
+    }
+    return (data || []).reverse();
+  }
+
+  async function sendMessage(channelId, content) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: { message: 'Não autenticado' } };
+
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({
+        channel_id: channelId,
+        user_id: user.id,
+        content
+      })
+      .select('*, profiles:user_id(username, avatar_url, avatar_color)')
+      .single();
+
+    if (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      return { error };
+    }
+    return { data };
+  }
+
+  function subscribeToMessages(channelId, onNewMessage) {
+    unsubscribeFromMessages();
+
+    messageSubscription = supabase
+      .channel(`messages:${channelId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `channel_id=eq.${channelId}`
+      }, async (payload) => {
+        // Fetch full message with profile data
+        const { data } = await supabase
+          .from('messages')
+          .select('*, profiles:user_id(username, avatar_url, avatar_color)')
+          .eq('id', payload.new.id)
+          .single();
+        if (data && onNewMessage) onNewMessage(data);
+      })
+      .subscribe();
+  }
+
+  function unsubscribeFromMessages() {
+    if (messageSubscription) {
+      supabase.removeChannel(messageSubscription);
+      messageSubscription = null;
+    }
+  }
+
   return {
     getServers,
     getServerChannels,
@@ -379,7 +448,11 @@ const ServerManager = (() => {
     deleteChannel,
     getUserRole,
     isMember,
-    clearCache
+    clearCache,
+    getMessages,
+    sendMessage,
+    subscribeToMessages,
+    unsubscribeFromMessages
   };
 })();
 

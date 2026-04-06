@@ -349,6 +349,93 @@ window.UI = (() => {
     modal.classList.remove('active');
   }
 
+  // ========== CHAT FUNCTIONS ==========
+
+  function showChatView(channelName) {
+    document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('voice-view').classList.add('hidden');
+    document.getElementById('chat-view').classList.remove('hidden');
+    document.getElementById('chat-channel-name').textContent = channelName;
+  }
+
+  function hideChatView() {
+    document.getElementById('chat-view').classList.add('hidden');
+  }
+
+  function formatTimestamp(isoString) {
+    const d = new Date(isoString);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return `Hoje às ${time}`;
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return `Ontem às ${time}`;
+    return `${d.toLocaleDateString('pt-BR')} ${time}`;
+  }
+
+  function createMessageElement(msg) {
+    const profile = msg.profiles || {};
+    const username = profile.username || 'Usuário';
+    const initial = username[0].toUpperCase();
+    const color = profile.avatar_color || '#7c3aed';
+
+    const el = document.createElement('div');
+    el.className = 'chat-message';
+    el.dataset.messageId = msg.id;
+
+    el.innerHTML = `
+      <div class="msg-avatar" style="background: ${color}">
+        ${profile.avatar_url ? `<img src="${profile.avatar_url}" alt="">` : initial}
+      </div>
+      <div class="msg-body">
+        <div class="msg-header">
+          <span class="msg-username" style="color: ${color}">${username}</span>
+          <span class="msg-timestamp">${formatTimestamp(msg.created_at)}</span>
+        </div>
+        <div class="msg-content">${escapeHtml(msg.content)}</div>
+      </div>
+    `;
+    return el;
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function renderMessages(messages) {
+    const container = document.getElementById('chat-messages');
+    const welcome = document.getElementById('chat-welcome');
+
+    // Remove all messages but keep welcome
+    container.querySelectorAll('.chat-message').forEach(el => el.remove());
+
+    if (messages.length === 0) {
+      welcome.classList.remove('hidden');
+    } else {
+      welcome.classList.add('hidden');
+      messages.forEach(msg => {
+        container.appendChild(createMessageElement(msg));
+      });
+    }
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function appendMessage(msg) {
+    const container = document.getElementById('chat-messages');
+    const welcome = document.getElementById('chat-welcome');
+    welcome.classList.add('hidden');
+
+    // Avoid duplicates
+    if (container.querySelector(`[data-message-id="${msg.id}"]`)) return;
+
+    container.appendChild(createMessageElement(msg));
+    container.scrollTop = container.scrollHeight;
+  }
+
   return {
     ICONS,
     showToast,
@@ -363,6 +450,10 @@ window.UI = (() => {
     setScreenShareStream,
     openQualityModal,
     closeQualityModal,
-    playSFX
+    playSFX,
+    showChatView,
+    hideChatView,
+    renderMessages,
+    appendMessage
   };
 })();

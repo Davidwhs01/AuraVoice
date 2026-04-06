@@ -413,3 +413,29 @@
     RAISE NOTICE 'Taverna da DKZ created for user %', user_uuid;
   END;
   $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+  -- ============================================
+  -- MESSAGES (chat de texto)
+  -- ============================================
+  CREATE TABLE IF NOT EXISTS messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    channel_id UUID NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_messages_channel ON messages(channel_id, created_at DESC);
+
+  DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read messages' AND tablename = 'messages') THEN
+      ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY "Anyone can read messages" ON messages FOR SELECT USING (true);
+      CREATE POLICY "Authenticated users can send messages" ON messages FOR INSERT WITH CHECK (auth.uid() = user_id);
+      CREATE POLICY "Users can delete own messages" ON messages FOR DELETE USING (auth.uid() = user_id);
+    END IF;
+  END $$;
+
+  -- Enable Realtime for messages
+  ALTER PUBLICATION supabase_realtime ADD TABLE messages;

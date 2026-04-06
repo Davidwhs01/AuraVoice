@@ -13,6 +13,7 @@ import { SFX } from './sfx.js';
   let username = null;
   let activeServerId = null;
   let activeChannelId = null;
+  let activeTextChannelId = null;
   let currentRoomId = null;
   let roomsSummary = {};
   let roomUsers = {};
@@ -348,6 +349,45 @@ import { SFX } from './sfx.js';
     }
     SFX.leave();
     UI.showToast('Desconectado', 'info');
+  }
+
+  // ========== Text Chat ==========
+
+  async function openTextChannel(channelId, channelName) {
+    // Unsubscribe from previous channel
+    if (activeTextChannelId) {
+      ServerManager.unsubscribeFromMessages();
+    }
+    activeTextChannelId = channelId;
+
+    // Update active state in sidebar
+    document.querySelectorAll('.channel-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.channelId === channelId);
+    });
+
+    // Show chat view
+    UI.showChatView(channelName);
+
+    // Load existing messages
+    const messages = await ServerManager.getMessages(channelId);
+    UI.renderMessages(messages);
+
+    // Subscribe to new messages in realtime
+    ServerManager.subscribeToMessages(channelId, (newMsg) => {
+      UI.appendMessage(newMsg);
+    });
+  }
+
+  async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const content = input.value.trim();
+    if (!content || !activeTextChannelId) return;
+
+    input.value = '';
+    const { error } = await ServerManager.sendMessage(activeTextChannelId, content);
+    if (error) {
+      UI.showToast('Erro ao enviar mensagem', 'error');
+    }
   }
 
   function renderCurrentVoiceUsers() {
@@ -863,6 +903,9 @@ import { SFX } from './sfx.js';
       if (channelType === 'voice') {
         joinVoiceChannel(channelId, channelName);
         document.getElementById('app').classList.remove('menu-open');
+      } else if (channelType === 'text') {
+        openTextChannel(channelId, channelName);
+        document.getElementById('app').classList.remove('menu-open');
       }
     });
 
@@ -971,6 +1014,15 @@ import { SFX } from './sfx.js';
     document.getElementById('server-settings-modal-close').addEventListener('click', closeServerSettingsModal);
     document.getElementById('server-settings-modal').addEventListener('click', (e) => {
       if (e.target.id === 'server-settings-modal') closeServerSettingsModal();
+    });
+
+    // Chat input
+    document.getElementById('chat-send-btn').addEventListener('click', sendChatMessage);
+    document.getElementById('chat-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+      }
     });
 
     // Close context menu on outside click

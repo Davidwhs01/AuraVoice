@@ -3,7 +3,7 @@
 // ============================================
 
 import { supabase, signUp, signIn, signOut, getSession, getUser } from './supabase.js';
-import { getProfile, updateStatus } from './profile.js';
+import ProfileManager, { getProfile, updateStatus } from './profile.js';
 import ServerManager from './servers.js';
 import { SFX } from './sfx.js';
 

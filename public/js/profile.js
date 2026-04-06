@@ -34,15 +34,15 @@ const ProfileManager = (() => {
   }
 
   async function updateProfile(updates) {
-    const user = await supabase.auth.getUser();
-    if (!user.data.user) return { error: { message: 'Não autenticado' } };
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: { message: 'Não autenticado' } };
 
     updates.updated_at = new Date().toISOString();
     
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
-      .eq('id', user.data.user.id)
+      .eq('id', user.id)
       .select()
       .single();
 
@@ -53,11 +53,11 @@ const ProfileManager = (() => {
   }
 
   async function uploadAvatar(file) {
-    const user = await supabase.auth.getUser();
-    if (!user.data.user) return { error: { message: 'Não autenticado' } };
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: { message: 'Não autenticado' } };
 
     const fileExt = file.name.split('.').pop();
-    const fileName = `${user.data.user.id}/avatar.${fileExt}`;
+    const fileName = `${user.id}/avatar.${fileExt}`;
     const filePath = `avatars/${fileName}`;
 
     // Upload to storage
@@ -89,13 +89,13 @@ const ProfileManager = (() => {
   // ========== SETTINGS FUNCTIONS ==========
 
   async function getSettings() {
-    const user = await supabase.auth.getUser();
-    if (!user.data.user) return null;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
 
     const { data, error } = await supabase
       .from('user_settings')
       .select('*')
-      .eq('id', user.data.user.id)
+      .eq('id', user.id)
       .single();
 
     if (error) {
@@ -107,15 +107,15 @@ const ProfileManager = (() => {
   }
 
   async function saveSettings(updates) {
-    const user = await supabase.auth.getUser();
-    if (!user.data.user) return { error: { message: 'Não autenticado' } };
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: { message: 'Não autenticado' } };
 
     updates.updated_at = new Date().toISOString();
     
     const { data, error } = await supabase
       .from('user_settings')
       .upsert({
-        id: user.data.user.id,
+        id: user.id,
         ...updates
       })
       .select()
@@ -195,10 +195,10 @@ const ProfileManager = (() => {
 
   async function saveProfileFromModal() {
     const userId = document.getElementById('profile-modal').dataset.editUserId;
-    const currentUser = await supabase.auth.getUser();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
     
     // Only allow editing own profile
-    if (currentUser.data.user.id !== userId) {
+    if (!currentUser || currentUser.id !== userId) {
       UI.showToast('Você só pode editar seu próprio perfil', 'error');
       return;
     }

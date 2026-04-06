@@ -1707,3 +1707,274 @@ body::before {
 .user-panel .status-dot.idle { background: var(--yellow); }
 .user-panel .status-dot.dnd { background: var(--red); }
 .user-panel .status-dot.invisible { background: var(--text-muted); }
+
+/* ============================================
+   Context Menu (Server)
+   ============================================ */
+.context-menu {
+  position: fixed;
+  z-index: 3000;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  min-width: 200px;
+  box-shadow: var(--shadow-elevation-high);
+  animation: contextIn 0.15s ease;
+}
+
+@keyframes contextIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.context-menu-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.context-menu-item.danger {
+  color: var(--red);
+}
+
+.context-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 4px 0;
+}
+
+/* ============================================
+   Create Server Modal
+   ============================================ */
+.create-server-modal {
+  width: 400px;
+  text-align: center;
+}
+
+.create-server-modal .modal-subtitle {
+  margin-bottom: 24px;
+}
+
+/* ============================================
+   Join Server Modal
+   ============================================ */
+.join-server-modal {
+  width: 440px;
+  text-align: center;
+}
+
+.join-server-modal .modal-subtitle {
+  margin-bottom: 24px;
+}
+
+/* ============================================
+   Invite Modal
+   ============================================ */
+.invite-modal {
+  width: 440px;
+  text-align: center;
+}
+
+.invite-link-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.invite-link-group input {
+  flex: 1;
+  padding: 12px 14px;
+  background: var(--bg-darkest);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.btn-copy {
+  white-space: nowrap;
+  padding: 12px 20px;
+  width: auto;
+}
+
+/* ============================================
+   Server Settings Modal
+   ============================================ */
+.server-settings-modal {
+  width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.server-settings-section {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.server-settings-section h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  letter-spacing: 0.02em;
+}
+
+.server-settings-section .modal-input-group {
+  margin-bottom: 16px;
+}
+
+#settings-server-color {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  background: transparent;
+}
+
+/* Members List */
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-darkest);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.member-item:hover {
+  background: var(--bg-secondary);
+}
+
+.member-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.member-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-role {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+.member-role.owner {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--cosmic-star);
+}
+
+.member-role.admin {
+  background: rgba(168, 85, 247, 0.15);
+  color: var(--cosmic-violet);
+}
+
+.member-role.member {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-muted);
+}
+
+.member-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.member-role-select {
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.member-kick-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.member-kick-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+}
+
+.owner-badge {
+  font-size: 12px;
+  color: var(--cosmic-star);
+  padding: 4px 10px;
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: var(--radius-sm);
+}

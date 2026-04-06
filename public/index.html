@@ -486,11 +486,88 @@
     </div>
   </div>
 
+  <!-- Create Server Modal -->
+  <div id="create-server-modal" class="modal-overlay">
+    <div class="modal create-server-modal">
+      <div class="modal-header">
+        <h2>Criar Servidor</h2>
+        <button class="modal-close" id="create-server-modal-close">&times;</button>
+      </div>
+      <p class="modal-subtitle">Crie um servidor para conversar com seus amigos.</p>
+      <div class="modal-input-group">
+        <label for="create-server-name">NOME DO SERVIDOR</label>
+        <input type="text" id="create-server-name" placeholder="Meu servidor incrível" maxlength="50">
+      </div>
+      <button id="create-server-submit" class="btn-primary">Criar Servidor</button>
+    </div>
+  </div>
+
+  <!-- Join Server Modal -->
+  <div id="join-server-modal" class="modal-overlay">
+    <div class="modal join-server-modal">
+      <div class="modal-header">
+        <h2>Entrar em um Servidor</h2>
+        <button class="modal-close" id="join-server-modal-close">&times;</button>
+      </div>
+      <p class="modal-subtitle">Insira o link de convite para entrar.</p>
+      <div class="modal-input-group">
+        <label for="join-server-code">LINK DE CONVITE</label>
+        <input type="text" id="join-server-code" placeholder="https://auravoice.app/?invite=ABC12345">
+      </div>
+      <button id="join-server-submit" class="btn-primary">Entrar</button>
+    </div>
+  </div>
+
+  <!-- Invite Modal -->
+  <div id="invite-modal" class="modal-overlay">
+    <div class="modal invite-modal">
+      <div class="modal-header">
+        <h2>Convidar Pessoas</h2>
+        <button class="modal-close" id="invite-modal-close">&times;</button>
+      </div>
+      <p class="modal-subtitle">Compartilhe este link para convidar amigos.</p>
+      <div class="invite-link-group">
+        <input type="text" id="invite-link" readonly>
+        <button id="invite-copy-btn" class="btn-primary btn-copy">Copiar Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Server Settings Modal -->
+  <div id="server-settings-modal" class="modal-overlay">
+    <div class="modal server-settings-modal">
+      <div class="modal-header">
+        <h2>Configurações do Servidor</h2>
+        <button class="modal-close" id="server-settings-modal-close">&times;</button>
+      </div>
+
+      <div class="server-settings-section">
+        <h3>Informações</h3>
+        <div class="modal-input-group">
+          <label for="settings-server-name">NOME</label>
+          <input type="text" id="settings-server-name" maxlength="50">
+        </div>
+        <div class="modal-input-group">
+          <label for="settings-server-color">COR</label>
+          <input type="color" id="settings-server-color" value="#7c3aed">
+        </div>
+      </div>
+
+      <div class="server-settings-section">
+        <h3>Membros</h3>
+        <div id="members-list" class="members-list"></div>
+      </div>
+
+      <button id="server-settings-save" class="btn-primary">Salvar</button>
+    </div>
+  </div>
+
   <script type="module" src="/js/supabase.js"></script>
   <script type="module" src="/js/profile.js"></script>
   <script type="module" src="/js/realtime.js"></script>
   <script type="module" src="/js/ui.js"></script>
   <script type="module" src="/js/webrtc.js"></script>
+  <script type="module" src="/js/servers.js"></script>
   <script type="module" src="/js/app.js"></script>
 </body>
 </html>

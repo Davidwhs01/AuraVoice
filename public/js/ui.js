@@ -60,6 +60,103 @@ window.UI = (() => {
     });
   }
 
+  // Web Audio API Synthesizer for SFX
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  
+  function playSFX(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    const now = audioCtx.currentTime;
+    
+    if (type === 'join') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.5, now + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } else if (type === 'leave') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.15);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.5, now + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    }
+  }
+
+  function renderChannelsFromDB(server, channelsGrouped, activeChannelId, roomsSummary) {
+    const container = document.getElementById('channels-container');
+    const serverName = document.getElementById('server-name');
+    serverName.textContent = server.name;
+    container.innerHTML = '';
+
+    Object.entries(channelsGrouped).forEach(([categoryName, channels]) => {
+      const catEl = document.createElement('div');
+      catEl.className = 'channel-category';
+
+      catEl.innerHTML = `
+        <div class="category-header">
+          <svg class="category-arrow" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          <span class="category-name">${categoryName}</span>
+        </div>
+      `;
+
+      channels.forEach(channel => {
+        const isVoice = channel.type === 'voice';
+        const roomId = `${server.id}:${channel.id}`;
+        const roomData = roomsSummary[roomId];
+        const userCount = roomData ? roomData.count : 0;
+        const isActive = channel.id === activeChannelId;
+
+        const chEl = document.createElement('div');
+        chEl.className = `channel-item ${isActive ? 'active' : ''}`;
+        chEl.dataset.channelId = channel.id;
+        chEl.dataset.channelType = channel.type;
+        chEl.dataset.channelName = channel.name;
+
+        chEl.innerHTML = `
+          <span class="channel-icon">${isVoice ? ICONS.voiceChannel : ICONS.textChannel}</span>
+          <span class="channel-name">${channel.name}</span>
+          ${isVoice && userCount > 0 ? `<span class="channel-user-count">${userCount}</span>` : ''}
+        `;
+
+        catEl.appendChild(chEl);
+
+        if (isVoice && roomData && roomData.users && roomData.users.length > 0) {
+          const usersContainer = document.createElement('div');
+          usersContainer.className = 'channel-voice-users';
+
+          roomData.users.forEach(user => {
+            const userEl = document.createElement('div');
+            userEl.className = 'channel-voice-user';
+            userEl.dataset.socketId = user.socketId;
+            userEl.innerHTML = `
+              <div class="mini-avatar" style="background: ${user.avatarColor}">${user.username[0].toUpperCase()}</div>
+              <span class="mini-username">${user.username}</span>
+              <div class="user-icons"></div>
+            `;
+            usersContainer.appendChild(userEl);
+          });
+
+          catEl.appendChild(usersContainer);
+        }
+      });
+
+      container.appendChild(catEl);
+    });
+  }
+
   function renderChannels(server, activeChannelId, roomsSummary) {
     const container = document.getElementById('channels-container');
     const serverName = document.getElementById('server-name');
@@ -252,6 +349,7 @@ tile.innerHTML = `
     ICONS,
     showToast,
     renderServerIcons,
+    renderChannelsFromDB,
     renderChannels,
     renderVoiceUsers,
     updateSpeakingState,
@@ -260,6 +358,7 @@ tile.innerHTML = `
     removeScreenShareStream,
     setScreenShareStream,
     openQualityModal,
-    closeQualityModal
+    closeQualityModal,
+    playSFX
   };
 })();

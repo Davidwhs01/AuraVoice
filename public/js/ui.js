@@ -2,7 +2,7 @@
 // UI Helper Module
 // ============================================
 
-const UI = (() => {
+window.UI = (() => {
   // SVG icons
   const ICONS = {
     voiceChannel: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9 9 9 0 0 0-9-9zm0 16a7 7 0 0 1-7-7 7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7zm-1-11.5v9l7-4.5-7-4.5z"/></svg>`,

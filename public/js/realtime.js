@@ -371,4 +371,6 @@ const RealtimeManager = (() => {
   };
 })();
 
+window.RealtimeManager = RealtimeManager;
+
 export { RealtimeManager as default };

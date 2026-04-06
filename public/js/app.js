@@ -105,7 +105,11 @@ import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
       return;
     }
 
+    console.log('Tentando login com:', email);
+    
     const { data, error } = await signIn(email, password);
+    
+    console.log('Login result:', { data, error });
 
     if (error) {
       errorEl.textContent = error.message;
@@ -138,22 +142,32 @@ import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
       return;
     }
 
-    const { data, error } = await signUp(email, password);
+    // Disable email confirmation for demo
+    const { data: signupData, error: signupError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username: displayName
+        },
+        emailRedirectTo: window.location.origin
+      }
+    });
 
-    if (error) {
-      errorEl.textContent = error.message;
+    if (signupError) {
+      errorEl.textContent = signupError.message;
       errorEl.classList.remove('hidden');
     } else {
-      // Auto-login after signup
-      const { data: loginData, error: loginError } = await signIn(email, password);
-      if (loginError) {
-        // Account created, user needs to confirm email
+      // Check if email confirmation is required
+      if (signupData.user && !signupData.session) {
+        // Email confirmation required
         errorEl.textContent = 'Conta criada! Verifique seu email para confirmar.';
         errorEl.classList.remove('hidden');
         document.getElementById('register-form').classList.add('hidden');
         document.getElementById('login-form').classList.remove('hidden');
       } else {
-        currentUser = loginData.user;
+        // Auto-login (no confirmation needed)
+        currentUser = signupData.user;
         username = displayName;
         avatarColor = getRandomColor();
         socketId = 'user_' + Math.random().toString(36).substr(2, 9);

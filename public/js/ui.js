@@ -204,8 +204,11 @@ window.UI = (() => {
             const userEl = document.createElement('div');
             userEl.className = 'channel-voice-user';
             userEl.dataset.socketId = user.socketId;
+            const hasAvatar = user.avatarUrl && user.avatarUrl !== 'null';
             userEl.innerHTML = `
-              <div class="mini-avatar" style="background: ${user.avatarColor}">${user.username[0].toUpperCase()}</div>
+              <div class="mini-avatar" style="background: ${user.avatarColor}">
+                ${hasAvatar ? `<img src="${user.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : user.username[0].toUpperCase()}
+              </div>
               <span class="mini-username">${user.username}</span>
               <div class="user-icons"></div>
             `;
@@ -239,10 +242,11 @@ window.UI = (() => {
       if (muteState.deafened) iconsHtml += `<span class="icon-muted">${ICONS.deafened}</span>`;
       if (isScreenSharing) iconsHtml += `<span class="icon-screen">${ICONS.screen}</span>`;
 
-tile.innerHTML = `
+      const hasAvatar = userData.avatarUrl && userData.avatarUrl !== 'null';
+      tile.innerHTML = `
         <div class="tile-icons">${iconsHtml}</div>
         <div class="tile-avatar" style="background: ${userData.avatarColor || 'var(--cosmic-primary)'}">
-          ${(userData.username || 'U')[0].toUpperCase()}
+          ${hasAvatar ? `<img src="${userData.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : (userData.username || 'U')[0].toUpperCase()}
         </div>
         <div class="tile-username">${userData.username || 'Usuário'}</div>
         ${!isSelf ? `

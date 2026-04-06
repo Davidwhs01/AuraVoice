@@ -24,6 +24,7 @@ import { SFX } from './sfx.js';
   let localIsScreenSharing = false;
   let peerVolumes = {};
   let avatarColor = null;
+  let avatarUrl = null;
   let socketId = null;
   let userServers = [];
   let currentServerData = null;
@@ -137,11 +138,11 @@ import { SFX } from './sfx.js';
     }
   }
 
-  function showApp() {
+  async function showApp() {
     document.getElementById('login-modal').classList.remove('active');
     document.getElementById('app').classList.remove('hidden');
 
-    updateUserPanel();
+    await updateUserPanel();
     addLogoutButton();
     startApp();
   }
@@ -153,11 +154,23 @@ import { SFX } from './sfx.js';
     if (profile) {
       username = profile.username;
       avatarColor = profile.avatar_color || avatarColor;
+      avatarUrl = profile.avatar_url || null;
     }
 
     document.getElementById('user-display-name').textContent = username;
-    document.getElementById('user-avatar-letter').textContent = (username || 'U')[0].toUpperCase();
-    document.getElementById('user-avatar').style.background = avatarColor;
+    const imgEl = document.getElementById('user-avatar-img');
+    const letterEl = document.getElementById('user-avatar-letter');
+    
+    if (profile?.avatar_url) {
+      imgEl.src = profile.avatar_url;
+      imgEl.classList.remove('hidden');
+      letterEl.classList.add('hidden');
+    } else {
+      imgEl.classList.add('hidden');
+      letterEl.classList.remove('hidden');
+      letterEl.textContent = (username || 'U')[0].toUpperCase();
+      document.getElementById('user-avatar').style.background = avatarColor;
+    }
 
     const statusDot = document.querySelector('#user-avatar .status-dot');
     if (statusDot && profile) {
@@ -668,6 +681,7 @@ import { SFX } from './sfx.js';
       socketId: socketId,
       username: username,
       avatarColor: avatarColor,
+      avatarUrl: avatarUrl,
       isMuted: false,
       isDeafened: false,
       isSpeaking: false,
@@ -806,6 +820,12 @@ import { SFX } from './sfx.js';
 
     document.querySelector('.add-server').addEventListener('click', () => {
       openCreateServerModal();
+    });
+
+    document.getElementById('server-header').addEventListener('click', (e) => {
+      if (activeServerId) {
+        openServerContextMenu(activeServerId, e);
+      }
     });
 
     document.getElementById('channels-container').addEventListener('click', (e) => {

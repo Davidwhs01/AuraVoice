@@ -1,6 +1,7 @@
 // ============================================
 // Profile & Settings Manager
 // ============================================
+import { supabase } from './supabase.js';
 
 const ProfileManager = (() => {
   let currentProfile = null;

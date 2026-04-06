@@ -104,11 +104,17 @@
       final_username := base_username || '_' || substr(md5(random()::text), 1, 5);
       INSERT INTO profiles (id, username, avatar_color)
       VALUES (NEW.id, final_username, '#7c3aed');
+    WHEN OTHERS THEN
+      RAISE LOG 'Fatal error on profile insert: %', SQLERRM;
     END;
     
-    INSERT INTO user_settings (id)
-    VALUES (NEW.id)
-    ON CONFLICT (id) DO NOTHING;
+    BEGIN
+      INSERT INTO user_settings (id)
+      VALUES (NEW.id)
+      ON CONFLICT (id) DO NOTHING;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE LOG 'Fatal error on settings insert: %', SQLERRM;
+    END;
     
     RETURN NEW;
   END;

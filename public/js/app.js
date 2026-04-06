@@ -2,7 +2,7 @@
 // Main Application Controller (Supabase + Auth + Servers)
 // ============================================
 
-import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
+import { supabase, signUp, signIn, signOut, getSession, getUser } from './supabase.js';
 import { getProfile, updateStatus } from './profile.js';
 import ServerManager from './servers.js';
 import { SFX } from './sfx.js';
@@ -39,6 +39,21 @@ import { SFX } from './sfx.js';
       socketId = 'user_' + Math.random().toString(36).substr(2, 9);
       showApp();
     } else {
+      const savedCreds = localStorage.getItem('auravoice_creds');
+      if (savedCreds) {
+        try {
+          const { email, password } = JSON.parse(savedCreds);
+          const { data, error } = await signIn(email, password);
+          if (!error && data?.user) {
+            currentUser = data.user;
+            username = data.user.user_metadata?.username || email.split('@')[0];
+            avatarColor = getRandomColor();
+            socketId = 'user_' + Math.random().toString(36).substr(2, 9);
+            showApp();
+            return;
+          }
+        } catch(e) {}
+      }
       setupAuthModal();
     }
   }
@@ -82,6 +97,7 @@ import { SFX } from './sfx.js';
       errorEl.textContent = error.message;
       errorEl.classList.remove('hidden');
     } else {
+      localStorage.setItem('auravoice_creds', JSON.stringify({ email, password }));
       currentUser = data.user;
       username = data.user.user_metadata?.username || email.split('@')[0];
       avatarColor = getRandomColor();
@@ -128,6 +144,7 @@ import { SFX } from './sfx.js';
         document.getElementById('register-form').classList.add('hidden');
         document.getElementById('login-form').classList.remove('hidden');
       } else {
+        localStorage.setItem('auravoice_creds', JSON.stringify({ email, password }));
         currentUser = signupData.user;
         username = displayName;
         avatarColor = getRandomColor();
@@ -203,6 +220,7 @@ import { SFX } from './sfx.js';
   }
 
   async function handleLogout() {
+    localStorage.removeItem('auravoice_creds');
     await signOut();
     location.reload();
   }
@@ -818,6 +836,14 @@ import { SFX } from './sfx.js';
       if (serverId) { selectServer(serverId); }
     });
 
+    document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+      document.getElementById('app').classList.add('menu-open');
+    });
+
+    document.getElementById('mobile-overlay').addEventListener('click', () => {
+      document.getElementById('app').classList.remove('menu-open');
+    });
+
     document.querySelector('.add-server').addEventListener('click', () => {
       openCreateServerModal();
     });
@@ -836,6 +862,7 @@ import { SFX } from './sfx.js';
       const channelName = channelItem.dataset.channelName;
       if (channelType === 'voice') {
         joinVoiceChannel(channelId, channelName);
+        document.getElementById('app').classList.remove('menu-open');
       }
     });
 

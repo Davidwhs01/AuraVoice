@@ -319,7 +319,7 @@ tile.innerHTML = `
           <span class="screen-share-dot"></span>
           <span>${username}</span>
         </div>
-        <video autoplay playsinline></video>
+        <video autoplay playsinline ${username.includes('(voce)') ? 'muted' : ''}></video>
       `;
       container.appendChild(wrapper);
     } else {

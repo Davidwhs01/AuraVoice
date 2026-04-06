@@ -661,6 +661,7 @@ import ServerManager from './servers.js';
 
   function startApp() {
     const userData = {
+      userId: currentUser.id,
       socketId: socketId,
       username: username,
       avatarColor: avatarColor,
@@ -686,10 +687,21 @@ import ServerManager from './servers.js';
       roomsSummary = {};
       Object.values(state).forEach(peers => {
         peers.forEach(p => {
+          // 1. Strict anti-ghost for the active user:
+          // A user can only be in their real currentRoomId. Any other presence is a ghost.
+          if (p.username === username && p.roomId !== currentRoomId) return;
+
           if (p.roomId) {
             if (!roomsSummary[p.roomId]) roomsSummary[p.roomId] = { users: [], count: 0 };
-            roomsSummary[p.roomId].users.push(p);
-            roomsSummary[p.roomId].count++;
+            
+            // 2. Deduplicate to avoid "ghosts" from other users
+            const existingUserIndex = roomsSummary[p.roomId].users.findIndex(u => u.username === p.username);
+            if (existingUserIndex === -1) {
+              roomsSummary[p.roomId].users.push(p);
+              roomsSummary[p.roomId].count++;
+            } else {
+              roomsSummary[p.roomId].users[existingUserIndex] = p;
+            }
           }
         });
       });

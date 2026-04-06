@@ -240,93 +240,75 @@ ALTER TABLE rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE room_users ENABLE ROW LEVEL SECURITY;
 
 -- Servers
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Read servers if member' AND tablename = 'servers') THEN
-    CREATE POLICY "Read servers if member" ON servers FOR SELECT
-      USING (id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid()));
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Create servers' AND tablename = 'servers') THEN
-    CREATE POLICY "Create servers" ON servers FOR INSERT
-      WITH CHECK (auth.uid() IS NOT NULL);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Update own servers' AND tablename = 'servers') THEN
-    CREATE POLICY "Update own servers" ON servers FOR UPDATE
-      USING (owner_id = auth.uid() OR id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')));
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Delete own servers' AND tablename = 'servers') THEN
-    CREATE POLICY "Delete own servers" ON servers FOR DELETE
-      USING (owner_id = auth.uid());
-  END IF;
-END $$;
+DROP POLICY IF EXISTS "Read servers if member" ON servers;
+DROP POLICY IF EXISTS "Create servers" ON servers;
+DROP POLICY IF EXISTS "Update own servers" ON servers;
+DROP POLICY IF EXISTS "Delete own servers" ON servers;
+
+CREATE POLICY "Read servers if member" ON servers FOR SELECT
+  USING (owner_id = auth.uid() OR id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid()));
+
+CREATE POLICY "Create servers" ON servers FOR INSERT
+  WITH CHECK (owner_id = auth.uid());
+
+CREATE POLICY "Update own servers" ON servers FOR UPDATE
+  USING (owner_id = auth.uid() OR id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')));
+
+CREATE POLICY "Delete own servers" ON servers FOR DELETE
+  USING (owner_id = auth.uid());
 
 -- Server members
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Read members if member' AND tablename = 'server_members') THEN
-    CREATE POLICY "Read members if member" ON server_members FOR SELECT
-      USING (server_id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid()));
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Join server via invite' AND tablename = 'server_members') THEN
-    CREATE POLICY "Join server via invite" ON server_members FOR INSERT
-      WITH CHECK (auth.uid() IS NOT NULL);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Remove members if admin' AND tablename = 'server_members') THEN
-    CREATE POLICY "Remove members if admin" ON server_members FOR DELETE
-      USING (server_id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')));
-  END IF;
-END $$;
+DROP POLICY IF EXISTS "Read members if member" ON server_members;
+DROP POLICY IF EXISTS "Join server via invite" ON server_members;
+DROP POLICY IF EXISTS "Remove members if admin" ON server_members;
+
+CREATE POLICY "Read members if member" ON server_members FOR SELECT
+  USING (is_server_member(server_id, auth.uid()));
+
+CREATE POLICY "Join server via invite" ON server_members FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Remove members if admin" ON server_members FOR DELETE
+  USING (is_server_member(server_id, auth.uid()) AND get_user_role(server_id, auth.uid()) IN ('owner', 'admin'));
 
 -- Server invites
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Read invites if member' AND tablename = 'server_invites') THEN
-    CREATE POLICY "Read invites if member" ON server_invites FOR SELECT
-      USING (server_id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid()));
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Create invites if admin' AND tablename = 'server_invites') THEN
-    CREATE POLICY "Create invites if admin" ON server_invites FOR INSERT
-      WITH CHECK (server_id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')));
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Delete invites if admin' AND tablename = 'server_invites') THEN
-    CREATE POLICY "Delete invites if admin" ON server_invites FOR DELETE
-      USING (server_id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')));
-  END IF;
-END $$;
+DROP POLICY IF EXISTS "Read invites if member" ON server_invites;
+DROP POLICY IF EXISTS "Create invites if admin" ON server_invites;
+DROP POLICY IF EXISTS "Delete invites if admin" ON server_invites;
+
+CREATE POLICY "Read invites if member" ON server_invites FOR SELECT
+  USING (is_server_member(server_id, auth.uid()));
+
+CREATE POLICY "Create invites if admin" ON server_invites FOR INSERT
+  WITH CHECK (is_server_member(server_id, auth.uid()) AND get_user_role(server_id, auth.uid()) IN ('owner', 'admin'));
+
+CREATE POLICY "Delete invites if admin" ON server_invites FOR DELETE
+  USING (is_server_member(server_id, auth.uid()) AND get_user_role(server_id, auth.uid()) IN ('owner', 'admin'));
 
 -- Channels
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Read channels if member' AND tablename = 'channels') THEN
-    CREATE POLICY "Read channels if member" ON channels FOR SELECT
-      USING (server_id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid()));
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Manage channels if admin' AND tablename = 'channels') THEN
-    CREATE POLICY "Manage channels if admin" ON channels FOR ALL
-      USING (server_id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')));
-  END IF;
-END $$;
+DROP POLICY IF EXISTS "Read channels if member" ON channels;
+DROP POLICY IF EXISTS "Manage channels if admin" ON channels;
+
+CREATE POLICY "Read channels if member" ON channels FOR SELECT
+  USING (is_server_member(server_id, auth.uid()));
+
+CREATE POLICY "Manage channels if admin" ON channels FOR ALL
+  USING (is_server_member(server_id, auth.uid()) AND get_user_role(server_id, auth.uid()) IN ('owner', 'admin'));
 
 -- Rooms
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Read rooms if member' AND tablename = 'rooms') THEN
-    CREATE POLICY "Read rooms if member" ON rooms FOR SELECT
-      USING (server_id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid()));
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Manage rooms if admin' AND tablename = 'rooms') THEN
-    CREATE POLICY "Manage rooms if admin" ON rooms FOR ALL
-      USING (server_id IN (SELECT server_id FROM server_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')));
-  END IF;
-END $$;
+DROP POLICY IF EXISTS "Read rooms if member" ON rooms;
+DROP POLICY IF EXISTS "Manage rooms if admin" ON rooms;
+
+CREATE POLICY "Read rooms if member" ON rooms FOR SELECT
+  USING (is_server_member(server_id, auth.uid()));
+
+CREATE POLICY "Manage rooms if admin" ON rooms FOR ALL
+  USING (is_server_member(server_id, auth.uid()) AND get_user_role(server_id, auth.uid()) IN ('owner', 'admin'));
 
 -- Room users
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow all for room_users' AND tablename = 'room_users') THEN
-    CREATE POLICY "Allow all for room_users" ON room_users FOR ALL USING (true);
-  END IF;
-END $$;
+DROP POLICY IF EXISTS "Allow all for room_users" ON room_users;
+CREATE POLICY "Allow all for room_users" ON room_users FOR ALL USING (true);
+
 
 -- ============================================
 -- AUTO CREATE DEFAULT CHANNELS ON SERVER CREATE
@@ -363,3 +345,58 @@ DROP TRIGGER IF EXISTS on_server_owner_created ON servers;
 CREATE TRIGGER on_server_owner_created
   AFTER INSERT ON servers
   FOR EACH ROW EXECUTE FUNCTION add_owner_as_member();
+
+-- ============================================
+-- SEED FUNCTION: Create Taverna da DKZ for user
+-- ============================================
+CREATE OR REPLACE FUNCTION create_taverna_for_user()
+RETURNS VOID AS $$
+DECLARE
+  user_uuid UUID := 'afe2681a-6f0c-469a-b9b8-e07cb0cef98b';
+  server_id UUID;
+BEGIN
+  -- Create server with UUID
+  INSERT INTO servers (id, name, icon, color, owner_id)
+  VALUES (gen_random_uuid(), 'Taverna da DKZ', '🛡️', '#a855f7', user_uuid)
+  RETURNING id INTO server_id;
+  
+  -- Create channels
+  INSERT INTO channels (server_id, name, type, category, position) VALUES
+    -- STAFF
+    (server_id, '💬 | chat-equipe', 'text', 'STAFF', 0),
+    (server_id, '🤖 | comandos-equipe', 'text', 'STAFF', 1),
+    (server_id, '👁️ | referência-visual', 'text', 'STAFF', 2),
+    (server_id, '📚 | guias', 'text', 'STAFF', 3),
+    (server_id, 'Hablas', 'voice', 'STAFF', 4),
+    
+    -- IMPORTANTE
+    (server_id, '📜 | regras', 'text', 'IMPORTANTE', 5),
+    (server_id, '📣 | anuncios', 'text', 'IMPORTANTE', 6),
+    (server_id, '👋 | boas-vindas', 'text', 'IMPORTANTE', 7),
+    
+    -- Comunidade
+    (server_id, '💬 | chat', 'text', 'Comunidade', 8),
+    (server_id, '🤖 | comandos', 'text', 'Comunidade', 9),
+    (server_id, '🎃 | memes', 'text', 'Comunidade', 10),
+    
+    -- CALLS
+    (server_id, 'Dois dedo de prosa', 'voice', 'CALLS', 11),
+    (server_id, 'Sábios', 'voice', 'CALLS', 12),
+    (server_id, 'Mal remunerados', 'voice', 'CALLS', 13),
+    (server_id, 'Sonegadores', 'voice', 'CALLS', 14),
+    (server_id, 'Aposentados', 'voice', 'CALLS', 15),
+    (server_id, 'Só o pó da rabiola', 'voice', 'CALLS', 16),
+    (server_id, 'Jogando', 'voice', 'CALLS', 17),
+    (server_id, 'Jogando II', 'voice', 'CALLS', 18),
+    (server_id, 'Jogando III', 'voice', 'CALLS', 19),
+    (server_id, 'Jogando IV', 'voice', 'CALLS', 20),
+    (server_id, 'Amongas', 'voice', 'CALLS', 21),
+    (server_id, 'Fortnai', 'voice', 'CALLS', 22),
+    (server_id, 'COD', 'voice', 'CALLS', 23),
+    (server_id, 'Tombou', 'voice', 'CALLS', 24);
+  
+  -- The trigger add_owner_as_member will automatically add the user as owner
+  
+  RAISE NOTICE 'Taverna da DKZ created for user %', user_uuid;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

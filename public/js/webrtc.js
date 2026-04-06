@@ -331,7 +331,12 @@ window.WebRTCManager = (() => {
           logicalSurface: true,
           cursor: 'always'
         },
-        audio: true
+        audio: {
+          suppressLocalAudioPlayback: true,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
       });
 
       isScreenSharing = true;

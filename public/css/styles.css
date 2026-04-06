@@ -1398,3 +1398,312 @@ body::before {
   background: var(--bg-hover);
   color: var(--red);
 }
+
+/* ============================================
+   Profile Modal
+   ============================================ */
+.profile-modal {
+  width: 420px;
+}
+
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.profile-avatar-wrapper {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: var(--cosmic-primary);
+  overflow: hidden;
+  transition: box-shadow var(--transition-normal);
+}
+
+.profile-avatar-wrapper:hover {
+  box-shadow: var(--glow-cosmic);
+}
+
+.profile-avatar-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar-wrapper span {
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  cursor: pointer;
+  color: white;
+}
+
+.profile-avatar-wrapper:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.profile-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.profile-color-picker label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.profile-color-picker input[type="color"] {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: transparent;
+}
+
+.profile-modal select {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-darkest);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.profile-modal select:focus {
+  outline: none;
+  border-color: var(--cosmic-primary);
+}
+
+.profile-modal textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-darkest);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 15px;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.profile-modal textarea:focus {
+  outline: none;
+  border-color: var(--cosmic-primary);
+}
+
+.profile-modal textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ============================================
+   Settings Modal
+   ============================================ */
+.settings-modal {
+  width: 680px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-layout {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.settings-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  text-align: left;
+}
+
+.settings-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.settings-tab.active {
+  background: var(--bg-active);
+  color: var(--text-primary);
+}
+
+.settings-content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.settings-content {
+  display: none;
+}
+
+.settings-content.active {
+  display: block;
+}
+
+.settings-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.settings-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-option:last-child {
+  border-bottom: none;
+}
+
+.settings-option label {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.settings-option select {
+  padding: 8px 12px;
+  background: var(--bg-darkest);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.settings-option select:focus {
+  outline: none;
+  border-color: var(--cosmic-primary);
+}
+
+.settings-option.checkbox {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.settings-option.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.settings-option.checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--cosmic-primary);
+  cursor: pointer;
+}
+
+/* Shortcuts */
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-darkest);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+.shortcut-item span {
+  color: var(--text-primary);
+}
+
+.shortcut-item kbd {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+/* ============================================
+   Status Indicators
+   ============================================ */
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 3px solid var(--bg-darkest);
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+}
+
+.status-indicator.online { background: var(--green); }
+.status-indicator.idle { background: var(--yellow); }
+.status-indicator.dnd { background: var(--red); }
+.status-indicator.invisible { background: var(--text-muted); }
+
+/* User panel status */
+.user-panel .status-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 3px solid var(--bg-darkest);
+}
+
+.user-panel .status-dot.online { background: var(--green); }
+.user-panel .status-dot.idle { background: var(--yellow); }
+.user-panel .status-dot.dnd { background: var(--red); }
+.user-panel .status-dot.invisible { background: var(--text-muted); }

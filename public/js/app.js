@@ -3,6 +3,7 @@
 // ============================================
 
 import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
+import { getProfile, updateStatus } from './profile.js';
 
 (() => {
   // ========== Server & Channel Data ==========
@@ -182,10 +183,8 @@ import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
     document.getElementById('login-modal').classList.remove('active');
     document.getElementById('app').classList.remove('hidden');
 
-    // Update user display
-    document.getElementById('user-display-name').textContent = username;
-    document.getElementById('user-avatar-letter').textContent = username[0].toUpperCase();
-    document.getElementById('user-avatar').style.background = avatarColor;
+    // Update user display with profile data
+    updateUserPanel();
 
     // Add logout button
     addLogoutButton();
@@ -193,6 +192,39 @@ import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
     // Start app
     startApp();
   }
+
+  async function updateUserPanel() {
+    if (!currentUser) return;
+    
+    const profile = await getProfile(currentUser.id);
+    if (profile) {
+      username = profile.username;
+      avatarColor = profile.avatar_color || avatarColor;
+    }
+
+    // Update UI
+    document.getElementById('user-display-name').textContent = username;
+    document.getElementById('user-avatar-letter').textContent = (username || 'U')[0].toUpperCase();
+    document.getElementById('user-avatar').style.background = avatarColor;
+    
+    // Update status indicator
+    const statusDot = document.querySelector('#user-avatar .status-dot');
+    if (statusDot && profile) {
+      statusDot.className = 'status-dot ' + (profile.status || 'online');
+    }
+    
+    // Update status text
+    const statusTextEl = document.querySelector('.user-status');
+    if (statusTextEl && profile?.status_text) {
+      statusTextEl.textContent = profile.status_text;
+    } else if (statusTextEl) {
+      const statusLabels = { online: 'Online', idle: 'Ausente', dnd: 'Não Perturbe', invisible: 'Invisível' };
+      statusTextEl.textContent = statusLabels[profile?.status || 'online'];
+    }
+  }
+
+  // Expose for profile manager
+  window.updateUserPanel = updateUserPanel;
 
   function addLogoutButton() {
     const userControls = document.querySelector('.user-controls');
@@ -246,6 +278,25 @@ import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
   }
 
   function setupRealtimeCallbacks() {
+    RealtimeManager.onGlobalUsersUpdatedCallback((state) => {
+      roomsSummary = {};
+      Object.values(state).forEach(peers => {
+        peers.forEach(p => {
+          if (p.roomId) {
+            const channelId = p.roomId.split(':').pop();
+            if (!roomsSummary[channelId]) roomsSummary[channelId] = { users: [] };
+            roomsSummary[channelId].users.push(p);
+          }
+        });
+      });
+      
+      // Update sidebar channels
+      const activeServer = SERVERS.find(s => s.id === activeServerId);
+      if (activeServer) {
+        UI.renderChannels(activeServer, activeChannelId, roomsSummary);
+      }
+    });
+
     RealtimeManager.onRoomUsersUpdatedCallback((users) => {
       roomUsers = users;
       renderCurrentVoiceUsers();
@@ -257,7 +308,9 @@ import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
     });
 
     RealtimeManager.onPeerConnectedCallback((peerData) => {
+      console.log('🔗 Connecting to new peer:', peerData.socketId);
       roomUsers[peerData.socketId] = peerData;
+      WebRTCManager.connectToPeer(peerData.socketId);
       UI.showToast(`${peerData.username} entrou no canal`, 'info');
       renderCurrentVoiceUsers();
     });
@@ -357,6 +410,20 @@ import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
       localIsDeafened = result.isDeafened;
       updateControlButtons();
       RealtimeManager.sendMuteStatus(localIsMuted, localIsDeafened);
+    });
+
+    // Settings & Profile buttons
+    document.getElementById('btn-settings').addEventListener('click', () => {
+      ProfileManager.openSettingsModal();
+    });
+
+    document.getElementById('user-avatar').addEventListener('click', () => {
+      ProfileManager.openProfileModal(currentUser.id);
+    });
+
+    // Status selector in user panel
+    document.querySelector('.user-details').addEventListener('click', () => {
+      ProfileManager.openProfileModal(currentUser.id);
     });
 
     document.getElementById('btn-screen-share').addEventListener('click', async () => {

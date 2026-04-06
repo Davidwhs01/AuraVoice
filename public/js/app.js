@@ -39,6 +39,7 @@ import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
 
   // ========== State ==========
   let currentUser = null;
+  let username = null;
   let activeServerId = null;
   let activeChannelId = null;
   let currentRoomId = null;

@@ -5,6 +5,7 @@
 import { signUp, signIn, signOut, getSession, getUser } from './supabase.js';
 import { getProfile, updateStatus } from './profile.js';
 import ServerManager from './servers.js';
+import { SFX } from './sfx.js';
 
 (() => {
   // ========== State ==========
@@ -290,6 +291,7 @@ import ServerManager from './servers.js';
     updateControlButtons();
     UI.showVoiceView(channelName);
     UI.showToast(`Conectado a ${channelName}`, 'success');
+    SFX.join();
   }
 
   function leaveVoiceChannel() {
@@ -313,6 +315,7 @@ import ServerManager from './servers.js';
     if (activeServerId) {
       selectServer(activeServerId);
     }
+    SFX.leave();
     UI.showToast('Desconectado', 'info');
   }
 
@@ -820,6 +823,7 @@ import ServerManager from './servers.js';
       localIsMuted = WebRTCManager.toggleMute();
       updateControlButtons();
       RealtimeManager.sendMuteStatus(localIsMuted, localIsDeafened);
+      if (localIsMuted) SFX.mute(); else SFX.unmute();
     });
 
     document.getElementById('btn-deafen').addEventListener('click', async () => {
@@ -828,6 +832,7 @@ import ServerManager from './servers.js';
       localIsDeafened = result.isDeafened;
       updateControlButtons();
       RealtimeManager.sendMuteStatus(localIsMuted, localIsDeafened);
+      if (localIsDeafened) SFX.mute(); else SFX.unmute();
     });
 
     document.getElementById('btn-settings').addEventListener('click', () => {

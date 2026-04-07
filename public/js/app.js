@@ -32,6 +32,13 @@ import { SFX } from './sfx.js';
 
   // ========== Init ==========
   async function init() {
+    // Capture invite first thing so we don't lose it on auth redirects
+    const params = new URLSearchParams(window.location.search);
+    const urlInvite = params.get('invite');
+    if (urlInvite) {
+      sessionStorage.setItem('pendingInvite', urlInvite);
+    }
+
     const session = await getSession();
     if (session) {
       currentUser = session.user;
@@ -712,21 +719,26 @@ import { SFX } from './sfx.js';
   // ========== Check URL for invite ==========
 
   async function checkUrlInvite() {
-    const params = new URLSearchParams(window.location.search);
-    const inviteCode = params.get('invite');
+    const inviteCode = sessionStorage.getItem('pendingInvite');
+    
     if (inviteCode) {
-      window.history.replaceState({}, '', window.location.pathname);
+      // Clear invite immediately so we don't process it multiple times
+      sessionStorage.removeItem('pendingInvite');
+      // Also clear URL if it's still there
+      if (window.location.search.includes('invite=')) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+
       if (currentUser) {
+        console.log('🔗 Empregando convite pendente:', inviteCode);
         const { data, error } = await ServerManager.joinByInvite(inviteCode);
         if (error) {
           UI.showToast(error.message, 'error');
         } else {
-          UI.showToast(`Voce entrou em "${data.name}"!`, 'success');
+          UI.showToast(`Você entrou em "${data.name}"!`, 'success');
           await loadUserServers();
           selectServer(data.id);
         }
-      } else {
-        sessionStorage.setItem('pendingInvite', inviteCode);
       }
     }
   }
